@@ -1,87 +1,87 @@
-# Meal-Mind: סוכן אחד, שני harnesses
+# Meal-Mind: one agent, two harnesses
 
-> **סטטוס:** שתי הגרסאות הורצו על אותו תרחיש (`results/api.json`, `results/sdk.json`), ו-23 בדיקות offline עוברות. כל המספרים בדוח נלקחו מקבצי התוצאות. כל גרסה הורצה פעם אחת, ולכן אין מדידת שונות.
+> **Status:** both versions ran the same scenario (`results/api.json`, `results/sdk.json`), and 23 offline tests pass. Every number below comes from the result files. Each version was run once, so there is no variance measurement.
 
-## הסוכן
-מתכנן ארוחות וקניות. 8 כלים ב-`shared/` (שבעה מקומיים, אחד חיצוני: TheMealDB), זיכרון העדפות בדיסק (אלרגיות, דיאטה, מספר סועדים), והתרחיש כולל סתירה (אלרגיה לאגוזים מול בקשה לעוגת פיסטוק).
-מודל: `claude-opus-5-5`, effort `medium`, בשתי הגרסאות. ספריות נעולות ב-`requirements.txt` (`anthropic==2.3.0`, `claude-agent-sdk==0.2.174`).
+## The agent
+A meal and shopping planner. 8 tools in `shared/` (seven local, one external: TheMealDB), preferences stored on disk (allergies, diet, number of diners), and a scenario that includes a contradiction (a nut allergy versus a request for a pistachio cake).
+Model: `claude-opus-5-5`, effort `medium`, in both versions. Libraries are pinned in `requirements.txt` (`anthropic==2.3.0`, `claude-agent-sdk==0.2.174`).
 
-## תוצאות (API מול SDK)
+## Results (API vs SDK)
 
-| מדד | API | SDK |
+| Metric | API | SDK |
 |---|---|---|
-| input tokens (לא מה-cache) | 58 | 52 |
+| input tokens (uncached) | 58 | 52 |
 | cache read | 56,745 | 72,824 |
 | cache write | 6,948 | 5,022 |
 | output | 4,162 | 4,093 |
-| סה"כ input מעובד (כולל cache) | 63,751 | 77,898 |
-| אחוז cache | 89.0% | 93.5% |
-| קריאות למודל | 22 | 28 |
-| עלות (USD) | 0.130 (אומדן מהטוקנים) | 0.137 (מדווח); אומדן מהטוקנים 0.122 |
-| זמן | 63.5 שניות | 150 שניות |
-| בדיקות שעברו (מתוך 8) | 8/8 | 8/8 |
+| total input processed (incl. cache) | 63,751 | 77,898 |
+| cache hit rate | 89.0% | 93.5% |
+| model calls | 22 | 28 |
+| cost (USD) | 0.130 (estimated from tokens) | 0.137 (reported); 0.122 estimated from tokens |
+| time | 63.5 s | 150 s |
+| checks passed (of 8) | 8/8 | 8/8 |
 
-הערות מדידה:
-- ב-API העלות מחושבת על ידי `Meter` שלי לפי מחירון (cache write ב-1.25× מה-input, הנחה שלי). אין מספר מדווח להשוואה.
-- ב-SDK `usage` ו-`num_turns` הם לפי פנייה, ו-`total_cost_usd` מצטבר בחיבור, ולכן העלות לתור היא הפרש. ריצה ראשונה הניחה בטעות שגם usage מצטבר, נתפסה בגלל ערכים שליליים, ותוקנה והורצה מחדש.
-- הפער בין העלות המדווחת ב-SDK (0.137) לאומדן שלי (0.122), כ-12%, לא הוסבר.
-- בהשוואת עלות צריך להשוות אותו סוג מספר. לפי אומדן זהה: API 0.130 מול SDK 0.122, כלומר ה-SDK זול ב-6%. לפי המדווח ב-SDK: 0.137 מול 0.130, כלומר ה-SDK יקר ב-6%. בשני המקרים ההפרש קטן ובריצה בודדת אי אפשר לקבוע כיוון.
+Measurement notes:
+- In the API version, cost is computed by my own `Meter` from a price list (cache write at 1.25× input, my assumption). There is no reported figure to compare it with.
+- In the SDK, `usage` and `num_turns` are per query, while `total_cost_usd` is a running total per connection, so the per-turn cost is a difference. The first SDK run wrongly assumed `usage` was cumulative too; negative values exposed it, and it was fixed and re-run.
+- The gap between the SDK's reported cost (0.137) and my estimate (0.122), about 12%, is unexplained.
+- Cost has to be compared like for like. With the same estimate formula: API 0.130 vs SDK 0.122, so the SDK is 6% cheaper. With the SDK's reported figure: 0.137 vs 0.130, so the SDK is 6% more expensive. Either way the difference is small, and a single run cannot establish a direction.
 
-תצפיות מהריצות:
-- **SDK:** בפנייה 3 המודל קרא 5 פעמים ל-`lookup_external_recipe`, ובפנייה 7 חיפש מתכון גם ברשת למרות שהבקשה נחסמה. הוא סירב להוסיף את עוגת הפיסטוק והציע חלופות בלי אגוזים.
-- **API:** בפנייה 3 היו 3 קריאות ל-`lookup_external_recipe`. בפנייה 7 הסוכן סירב להוסיף את העוגה, חיפש חלופות (חיפוש מקומי ושני חיפושים חיצוניים) ולא מצא עוגה מתאימה.
-- **API, פנייה 6:** המודל כתב שהופעת "עגבניות 200 גרם" ברשימה אחרי שהמלאי כולל קילו היא "כנראה תקלה". זו לא תקלה. התכנית דורשת 1.2 ק"ג, במלאי יש 1 ק"ג, וחסרים בדיוק 200 גרם. המודל טעה בהסבר, והכלי חישב נכון.
+Observations from the runs:
+- **SDK:** in turn 3 the model called `lookup_external_recipe` 5 times, and in turn 7 it also searched the web for a recipe even though the request was going to be blocked. It refused to add the pistachio cake and offered nut-free alternatives.
+- **API:** in turn 3 there were 3 calls to `lookup_external_recipe`. In turn 7 the agent refused to add the cake, searched for alternatives (one local and two external searches) and found no suitable cake.
+- **API, turn 6:** the model wrote that "tomatoes 200 g" still appearing on the list after the pantry gained 1 kg was "probably a bug". It is not. The plan needs 1.2 kg, the pantry holds 1 kg, and exactly 200 g is missing. The model explained it wrongly; the tool calculated correctly.
 
-## שורות קוד לכל חלק ב-harness (נמדד, ללא שורות ריקות והערות)
+## Lines of code per harness part (measured, excluding blank lines and comments)
 
-| חלק | API (`API/harness/`) | SDK (שורות עם `# replaces:`) |
+| Part | API (`API/harness/`) | SDK (lines tagged `# replaces:`) |
 |---|---|---|
 | loop | 31 | 2 |
 | tools | 23 | 13 |
 | history | 28 | 1 |
 | memory | 17 | 5 |
 | context | 22 | 1 |
-| compaction | 39 | 0 (אוטומטי) |
-| caching | 18 | 0 (אוטומטי) |
+| compaction | 39 | 0 (automatic) |
+| caching | 18 | 0 (automatic) |
 | tokens | 28 | 5 |
-| **סה"כ** | **206** | **27** |
+| **Total** | **206** | **27** |
 
-הערה: בצד ה-SDK נשארים גם `SDK/agent.py`, `SDK/main.py`, והקוד המשותף ב-`shared/`, והם לא נספרים כאן כי אינם מחליפים קובץ harness. הספירה של ה-SDK היא שורות שסימנתי ידנית ב-`# replaces:`, ולכן היא פחות אובייקטיבית מהספירה ב-API, שסופרת קבצים שלמים.
+Note: the SDK side also keeps `SDK/agent.py`, `SDK/main.py` and the shared code in `shared/`. They are not counted here because they do not replace a harness file. The SDK count is made of lines I tagged by hand with `# replaces:`, so it is less objective than the API count, which counts whole files.
 
-## איפה ה-SDK עלה יותר טוקנים ואיפה פחות
-- **יותר input מעובד:** 77,898 מול 63,751, כלומר כ-22% יותר. כמעט כולו נוסף ב-cache read (72,824 מול 56,745). ה-output כמעט זהה (4,093 מול 4,162), כך שהתשובות עצמן לא ארוכות יותר.
-- **למה, לפי הנתונים:** ל-SDK היו 28 קריאות למודל מול 22, וכל קריאה שולחת מחדש את כל ההקשר (נקרא מה-cache). שש קריאות נוספות מסבירות את רוב הפער. הפער בקריאות נובע בעיקר מכך שבפנייה 3 המודל חיפש 5 פעמים ולא 3. לא בדקתי מה בדיוק מוסיף Claude Code ל-prompt, ולכן זו השערה שלא נבדקה.
-- **פחות cache write ב-SDK:** 5,022 מול 6,948. ב-SDK ה-prefix יציב בין תורות ונשמר. ב-API ההזרקה לכל תור (שורת זיכרון, ולפעמים תכנית או מלאי) יוצרת הודעות חדשות שנכתבות ל-cache.
-- **אחוז cache:** שתי הגרסאות מעל 89%. ההשערה שלי הקודמת, שה-prefix ב-API קצר מדי ל-cache, הופרכה: כבר בפנייה 1 נקראו 1,488 טוקנים מה-cache.
-- **זמן:** 63.5 שניות ב-API מול 150 שניות ב-SDK, פי 2.4. לא מדדתי מה גורם לזה. מועמדים סבירים הם העבודה הנוספת של Claude Code לכל קריאה וה-6 קריאות הנוספות, אבל לא בודדתי אותם.
+## Where the SDK used more tokens and where fewer
+- **More input processed:** 77,898 vs 63,751, about 22% more. Almost all of it is extra cache read (72,824 vs 56,745). Output is nearly identical (4,093 vs 4,162), so the answers themselves are not longer.
+- **Why, according to the data:** the SDK made 28 model calls vs 22, and every call resends the whole context (read from cache). Six extra calls explain most of the gap. The call gap comes mainly from turn 3, where the model searched 5 times instead of 3. I did not check what exactly Claude Code adds to the prompt, so that part is an untested hypothesis.
+- **Less cache write in the SDK:** 5,022 vs 6,948. In the SDK the prefix is stable across turns and stays cached. In the API, the per-turn injection (a memory line, and sometimes plan or pantry) creates new messages that get written to the cache.
+- **Cache hit rate:** both versions are at 89% or higher. My earlier hypothesis, that the API prefix was too short to cache, was refuted: 1,488 tokens were already read from the cache in turn 1.
+- **Time:** 63.5 s for the API vs 150 s for the SDK, a factor of 2.4. I did not measure the cause. Plausible candidates are Claude Code's extra work per call and the 6 extra calls, but I did not isolate them.
 
-## על מה הייתה לי שליטה ב-API ואיבדתי ב-SDK
-- **הקשר לכל תור:** ב-API `context.py` קובע בדיוק מה נכנס, ומוסיף תכנית או מלאי רק כשההודעה רלוונטית. ב-SDK אין hook כזה. יש CLAUDE.md וכלים, והמודל שולף בעצמו.
-- **פלט כלים:** ב-API אני חותכת ל-1500 תווים. ב-SDK החיתוך הוא של Claude Code.
-- **נקודות cache ודחיסה:** ב-API מוגדרות ידנית (3 נקודות, דחיסה לפי סף). ב-SDK אוטומטיות ולא ניתנות לכיוונון מכאן. בריצה הראשית דחיסה לא הופעלה באף גרסה, כי התרחיש קצר (הפרומפט מגיע לכ-4,000 טוקנים). ריצה נפרדת עם סף נמוך מתוארת בסעיף "ריצת דחיסה" למטה.
+## What control I had in the API and lost in the SDK
+- **Per-turn context:** in the API, `context.py` decides exactly what goes in, and adds the plan or pantry only when the message is relevant. The SDK has no such hook. It has CLAUDE.md and tools, and the model retrieves what it needs itself.
+- **Tool output:** in the API I truncate to 1500 characters. In the SDK, truncation is Claude Code's.
+- **Cache breakpoints and compaction:** set manually in the API (3 breakpoints, compaction by threshold). Automatic in the SDK, and not tunable from here. In the main run compaction did not trigger in either version, because the scenario is short (the prompt peaks around 4,000 tokens). A separate low-threshold run is described in "Compaction run" below.
+- **Memory:** in the SDK it is a CLAUDE.md file rewritten after `save_preference`. In the API it is selected by relevance and injected into the message.
+- **What I did not lose:** both implementations passed 8/8 on the same scenario, including the refusal on the contradiction. The check that blocks a conflict with saved preferences lives in `shared/kitchen.py`, so the protection does not depend on the harness.
 
-## ריצת דחיסה (API בלבד, `results/api_compaction.json`)
-כדי לראות את `compaction.py` פועל בפועל, הרצתי את ה-API עם `--compact-at 3500`. ריצת ההשוואה הראשית נשארה עם הסף ברירת המחדל (60,000), כדי שתנאיה יהיו זהים ל-SDK.
-- **הדחיסה פעלה בתחילת תור 4:** `summarizing 12 messages (prompt is 3628 tokens)`. הפרומפט של הקריאה הבאה ירד לכ-2,900 טוקנים, ו-8/8 הבדיקות עברו.
-- **העלות עלתה, לא ירדה:** תור 4 עלה $0.040 מול כ-$0.021 בריצה הראשית, והסך $0.136 מול $0.130. הסיבה: קריאת הסיכום היא קריאה נוספת (כ-1,100 טוקני input שלא מה-cache ו-470 טוקני output), וה-cache נשבר כי תחילת השיחה השתנתה. אחוז ה-cache ירד מ-89.0% ל-84.5%.
-- **המסקנה:** בשיחה קצרה דחיסה לא משתלמת. היא נועדה לשיחות ארוכות, שבהן החיסכון בכל קריאה אחרי הדחיסה גדול מעלות הסיכום. ריצה בודדת, ולכן ההפרש הקטן בעלות הכולל אינו מובהק, אבל הכיוון בתור 4 ברור.
-- **באג שנתפס בגלל הריצה:** `find_cut` חיפש הודעת משתמש אמיתית רק בתוך 4 ההודעות האחרונות, ואחרי תור עם כלים כולן הודעות כלים, ולכן הדחיסה הייתה מדלגת תמיד. תוקן, ונוסף מבחן offline (בסך הכול 23). בנוסף, שורת ה-trace של `tokens.py` הדפיסה סכומים מצטברים לתור במקום נתוני הקריאה, ותוקנה. נתוני קובצי התוצאות לא הושפעו. הריצה הראשית `api.json` נעשתה לפני התיקון, אבל לא הפעילה דחיסה ולכן לא הושפעה ממנו.
-- **זיכרון:** ב-SDK הוא קובץ CLAUDE.md שנכתב מחדש אחרי `save_preference`. ב-API הוא נבחר לפי רלוונטיות ומוזרק להודעה.
-- **מה לא איבדתי:** שני המימושים עברו 8/8 על אותו תרחיש, כולל הסירוב בסתירה. החסימה של התנגשות עם העדפות יושבת ב-`shared/kitchen.py`, ולכן ההגנה לא תלויה ב-harness.
+## Compaction run (API only, `results/api_compaction.json`)
+To see `compaction.py` work in practice, I ran the API version with `--compact-at 3500`. The main comparison run kept the default threshold (60,000), so its conditions match the SDK's.
+- **Compaction fired at the start of turn 4:** `summarizing 12 messages (prompt is 3628 tokens)`. The prompt of the next call dropped to about 2,900 tokens, and all 8 checks passed.
+- **Cost went up, not down:** turn 4 cost $0.040 vs about $0.021 in the main run, and the total was $0.136 vs $0.130. The reason: the summary is an extra model call (about 1,100 uncached input tokens and 470 output tokens), and the cache is broken because the start of the conversation changed. The cache hit rate fell from 89.0% to 84.5%.
+- **Conclusion:** in a short conversation compaction does not pay off. It exists for long conversations, where the saving on every call after compaction exceeds the cost of the summary. This is a single run, so the small difference in total cost is not significant, but the direction in turn 4 is clear.
+- **A bug the run exposed:** `find_cut` looked for a real user message only within the last 4 messages. After a turn with tools, all of those are tool messages, so compaction would always have been skipped. It is fixed, and an offline test was added (23 in total). Also, the trace line in `tokens.py` printed per-turn running sums instead of per-call usage, and that was fixed too. The result files were not affected. The main run `api.json` was made before the fix, but compaction did not trigger in it, so it was not affected.
 
-## איזו גרסה הייתי בוחרת
-**SDK כברירת מחדל לסוכן כזה.** הוא עבר אותן 8 בדיקות עם 27 שורות מול 207, בלי לממש לולאה, cache ודחיסה בעצמי. העלות הייתה שווה בקירוב לעלות ה-API (הפרש של כ-6% בכיוון לא יציב), והאיכות לא נראתה גרועה יותר.
+## Which version I would choose
+**The SDK by default, for an agent like this.** It passed the same 8 checks with 27 lines against 206, without implementing the loop, caching and compaction myself. Its cost was roughly equal to the API's (a difference of about 6%, in an unstable direction), and the quality did not look worse.
 
-**ה-API עדיף כשהזמן או השליטה חשובים.** הוא היה מהיר פי 2.4 בריצה שלי, והוא מאפשר להחליט בדיוק מה נכנס לכל פנייה, מה נחתך ומתי לדחוס. אם הסוכן יגיע לשיחות ארוכות או לנפחי שימוש שבהם כל טוקן נספר, השליטה הזו תשתלם. התרחיש הזה קצר, ולכן לא הוכחתי זאת.
+**The API is better when time or control matters.** It was 2.4 times faster in my run, and it lets me decide exactly what goes into each query, what gets truncated and when to compact. If the agent grows to long conversations or to usage volumes where every token counts, that control pays off. This scenario is short, so I did not prove it.
 
-מגבלות של ההשוואה: ריצה אחת לכל גרסה, מודל לא דטרמיניסטי (למשל 5 חיפושים מול 3), עלות API מחושבת לפי הנחת מחיר שלי, ופער עלות ב-SDK שלא הוסבר.
+Limitations of the comparison: one run per version, a non-deterministic model (for example 5 searches vs 3), an API cost computed from my own price assumption, and an unexplained cost gap in the SDK.
 
-## הרצה
+## Running
 ```
-# API (דורש ANTHROPIC_API_KEY במשתנה סביבה בטרמינל בלבד)
+# API (requires ANTHROPIC_API_KEY as an environment variable in the terminal only)
 .venv\Scripts\python API\main.py --scenario scenario.json --out results\api.json
-# SDK (על ה-login של Claude Code; המפתח מתעלמים ממנו בתהליך)
+# SDK (uses the Claude Code login; the key is ignored for this process)
 .venv\Scripts\python SDK\main.py --scenario scenario.json --out results\sdk.json
-# בדיקות offline
+# Offline tests
 .venv\Scripts\python -m pytest tests -q
 ```

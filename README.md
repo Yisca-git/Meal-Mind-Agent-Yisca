@@ -20,7 +20,7 @@ Same scenario (7 turns, 2 sessions, 8 state-based checks), same model (`claude-o
 | time | 63.5 s | 150 s |
 | harness lines | 206 | 27 |
 
-The full comparison, with caveats, is in [REPORT.md](REPORT.md) (written in Hebrew).
+The full comparison, with caveats, is in [REPORT.md](REPORT.md).
 
 ## Setup
 

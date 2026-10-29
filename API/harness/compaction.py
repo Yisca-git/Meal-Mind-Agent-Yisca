@@ -10,10 +10,9 @@ def _is_user_text(message):
 
 def find_cut(messages, keep_last):
     """Index where the kept tail starts: a real user message, so tool_use/tool_result pairs stay together."""
-    for i in range(max(len(messages) - keep_last, 1), len(messages)):
-        if _is_user_text(messages[i]):
-            return i
-    return 0
+    starts = [i for i in range(1, len(messages)) if _is_user_text(messages[i])]
+    before = [i for i in starts if i <= len(messages) - keep_last]  # the tail may hold only tool messages
+    return before[-1] if before else (starts[0] if starts else 0)
 
 
 def render(messages):
@@ -36,6 +35,7 @@ def maybe_compact(client, model, messages, history, meter, threshold, keep_last=
     cut = find_cut(messages, keep_last)
     if cut == 0:
         return messages
+    trace("compaction", f"summarizing {cut} messages (prompt is {meter.last_prompt_tokens} tokens)")
     response = client.messages.create(
         model=model, max_tokens=800, output_config={"effort": "low"},
         system="Summarize this meal-planning conversation for your own later use: preferences, decisions, "
@@ -44,5 +44,4 @@ def maybe_compact(client, model, messages, history, meter, threshold, keep_last=
     meter.record(response.usage)
     summary = "[summary of earlier conversation]\n" + "".join(b.text for b in response.content if b.type == "text")
     history.compaction(summary, cut)
-    trace("compaction", f"summarized {cut} messages (prompt was {meter.last_prompt_tokens} tokens)")
     return [{"role": "user", "content": summary}] + messages[cut:]

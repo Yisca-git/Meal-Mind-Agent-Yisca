@@ -100,6 +100,16 @@ def test_compaction_summarizes_old_turns_and_keeps_pairing(state):
     assert reloaded == agent.messages  # compaction replays from the append-only file
 
 
+def test_find_cut_works_when_the_tail_is_only_tool_messages():
+    tool_use = {"role": "assistant", "content": [{"type": "tool_use", "id": "t", "name": "x", "input": {}}]}
+    result = {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t", "content": "ok"}]}
+    messages = [{"role": "user", "content": "q1"}, {"role": "assistant", "content": [{"type": "text", "text": "a1"}]},
+                {"role": "user", "content": "q2"}, tool_use, result, tool_use, result,
+                {"role": "assistant", "content": [{"type": "text", "text": "a2"}]}]
+    cut = compaction.find_cut(messages, keep_last=4)
+    assert cut == 2 and messages[cut]["content"] == "q2"  # the kept tail starts at a real user message
+
+
 def test_meter_costs_cache_tiers_separately():
     from tests.conftest import usage
     meter = Meter("claude-opus-5-5")

@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--model", default="claude-opus-5-5")
     parser.add_argument("--effort", default="medium")
     parser.add_argument("--state-dir", default=str(ROOT / ".runs" / "api"))
+    parser.add_argument("--compact-at", type=int, default=60000, help="prompt-token threshold for compaction")
     args = parser.parse_args()
     if not os.environ.get("ANTHROPIC_API_KEY"):
         sys.exit("Set ANTHROPIC_API_KEY in your terminal first (never in code or git).")
@@ -29,7 +30,7 @@ def main():
 
     def make_agent(number, session):
         resume_from = number - 1 if session.get("resume_history") else None
-        return MealAgent(args.state_dir, client, args.model, args.effort, number, resume_from)
+        return MealAgent(args.state_dir, client, args.model, args.effort, number, resume_from, args.compact_at)
 
     results = runner.run_scenario(scenario, make_agent, args.state_dir, "api", args.model, args.effort,
                                   runner.api_line_counts)

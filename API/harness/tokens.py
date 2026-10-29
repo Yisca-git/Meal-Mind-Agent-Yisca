@@ -24,7 +24,7 @@ class Meter:
         self.calls += 1
         self.last_prompt_tokens = (usage.input_tokens or 0) + (getattr(usage, "cache_read_input_tokens", 0) or 0) \
             + (getattr(usage, "cache_creation_input_tokens", 0) or 0)
-        trace("tokens", f"call {self.calls}: {self.t}")
+        trace("tokens", f"call {self.calls}: prompt {self.last_prompt_tokens}, output {usage.output_tokens}")
 
     def tool(self, name):
         self.tools.append(name)

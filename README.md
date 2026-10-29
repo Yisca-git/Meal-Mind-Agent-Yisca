@@ -18,7 +18,7 @@ Same scenario (7 turns, 2 sessions, 8 state-based checks), same model (`claude-o
 | model calls | 22 | 28 |
 | cache hit | 89.0% | 93.5% |
 | time | 63.5 s | 150 s |
-| harness lines | 207 | 27 |
+| harness lines | 206 | 27 |
 
 The full comparison, with caveats, is in [REPORT.md](REPORT.md) (written in Hebrew).
 

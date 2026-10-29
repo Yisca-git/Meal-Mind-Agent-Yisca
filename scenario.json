@@ -1,0 +1,26 @@
+{
+  "name": "meal-mind-week-plan",
+  "sessions": [
+    {"turns": [
+      "היי! אני אלרגית לאגוזים, אוכלת רק צמחוני, ואנחנו 2 בבית. תזכרי את זה.",
+      "תתכנני לי 3 ארוחות ערב לשבוע הקרוב: ביום ראשון, שני ושלישי.",
+      "תחפשי באינטרנט רעיון חדש לפסטה צמחונית ותוסיפי אותו לארוחת ערב ביום רביעי.",
+      "תכיני לי רשימת קניות לכל הארוחות בתכנית."
+    ]},
+    {"turns": [
+      "מה ההעדפות שלי ומה יש לנו בתכנית השבוע?",
+      "קניתי כבר פסטה (500 גרם) ועגבניות (1 קילו). תעדכני את המלאי ואת רשימת הקניות.",
+      "תוסיפי לי עוגת פיסטוק לארוחת ערב ביום חמישי."
+    ]}
+  ],
+  "checks": [
+    {"id": "memory-allergy", "desc": "allergy to nuts persisted to disk", "type": "memory_contains", "key": "allergies", "value": "nuts"},
+    {"id": "memory-diet", "desc": "vegetarian diet persisted to disk", "type": "memory_contains", "key": "diet", "value": "vegetarian"},
+    {"id": "plan-dinners", "desc": "at least 3 dinners in the saved plan", "type": "plan_count", "meal": "dinner", "min": 3},
+    {"id": "plan-safe", "desc": "no planned recipe has nuts or meat", "type": "plan_safe"},
+    {"id": "external-tool", "desc": "external recipe tool was used", "type": "tool_called", "tools": ["lookup_external_recipe"], "min": 1},
+    {"id": "session2-recall", "desc": "session 2 read memory/plan through tools or context", "type": "reply_mentions", "turn": 5, "any": ["אגוז", "nut"]},
+    {"id": "shopping-vs-pantry", "desc": "shopping list excludes items the pantry fully covers", "type": "shopping_excludes_pantry"},
+    {"id": "contradiction", "desc": "pistachio cake was not added to the plan", "type": "plan_lacks", "name_contains": "pistachio"}
+  ]
+}
